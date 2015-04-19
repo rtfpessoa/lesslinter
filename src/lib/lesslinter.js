@@ -22,77 +22,77 @@
     _.assign(_this.options, {
       less: {},
       csslint: {},
-      imports: void 0,
-      failOnError: true
+      imports: void 0
     });
 
-    var lintResult = {};
+    var result = {};
+    var lintResult;
 
     var lessFile = new LessFile(_this.fileSrc, _this.fileContents, _this.rules, _this.options);
-    lessFile.lint(function (err, result) {
-      if (err != null) {
-        console.error(err.message);
+    lessFile.lint(function (_err, _result) {
+      if (_err != null) {
+        console.error(_err.message);
         return false;
       }
 
-      result || (result = {});
-      lintResult = result.lint;
-      if (lintResult) {
-        var sourceMap = new SourceMapConsumer(result.sourceMap);
+      result = _result;
+    });
 
-        var filteredMessages = lintResult.messages.filter(function (message) {
-          if (message.line === 0 || message.rollup) return true;
+    result || (result = {});
+    lintResult = result.lint;
+    if (lintResult && result.sourceMap) {
+      var sourceMap = new SourceMapConsumer(result.sourceMap);
 
-          var source = sourceMap.originalPositionFor({
+      var filteredMessages = lintResult.messages.filter(function (message) {
+        if (message.line === 0 || message.rollup) return true;
+
+        var source = sourceMap.originalPositionFor({
+          line: message.line,
+          column: message.col
+        }).source;
+
+        if (source === null) return false;
+
+        source && (source = path.resolve(source));
+
+        var isThisFile = (source === _this.fileSrc);
+
+        // TODO: respect requested imports
+        //var stripPath = require('strip-path');
+        //var sourceArray = [stripPath(source, process.cwd()), stripPath(source, process.cwd() + '\\')];
+        //return isThisFile || grunt.file.isMatch(_this.options.imports, sourceArray);
+
+        return isThisFile;
+      });
+
+      filteredMessages || (filteredMessages = []);
+
+      filteredMessages.forEach(function (message) {
+        if (message.line !== 0 && !message.rollup) {
+          var lessPosition = sourceMap.originalPositionFor({
             line: message.line,
             column: message.col
-          }).source;
+          });
 
-          if (source === null) return false;
+          message.lessLine = {
+            line: lessPosition.line,
+            column: lessPosition.column
+          };
+        }
+      });
 
-          source && (source = path.resolve(source));
+      lintResult.messages || (lintResult.messages = []);
 
-          var isThisFile = (source === _this.fileSrc);
+      lintResult.messages.forEach(function (message) {
+        if (message.lessLine) {
+          message.line = message.lessLine.line - 1;
+          message.col = message.lessLine.column - 1;
+        }
 
-          // TODO: respect requested imports
-          //var stripPath = require('strip-path');
-          //var sourceArray = [stripPath(source, process.cwd()), stripPath(source, process.cwd() + '\\')];
-          //return isThisFile || grunt.file.isMatch(_this.options.imports, sourceArray);
-
-          return isThisFile;
-        });
-
-        filteredMessages || (filteredMessages = []);
-
-        filteredMessages.forEach(function (message) {
-          if (message.line !== 0 && !message.rollup) {
-            var lessPosition = sourceMap.originalPositionFor({
-              line: message.line,
-              column: message.col
-            });
-
-            message.lessLine = {
-              line: lessPosition.line,
-              column: lessPosition.column
-            };
-          }
-        });
-      }
-
-      return true;
-    });
-
-    lintResult.messages || (lintResult.messages = []);
-
-    lintResult.messages.forEach(function (message) {
-      if (message.lessLine) {
-        message.line = message.lessLine.line - 1;
-        message.col = message.lessLine.column - 1;
-      }
-
-      message.line += 1;
-      message.col += 2;
-    });
+        message.line += 1;
+        message.col += 2;
+      });
+    }
 
     return lintResult;
   };

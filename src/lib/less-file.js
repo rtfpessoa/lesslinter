@@ -1,6 +1,7 @@
 (function () {
   var crypto = require('crypto');
   var chalk = require('chalk');
+  var _ = require('lodash');
 
   var LessParser = require('./less-parser');
   var CSSLint = require('./csslint-extended').CSSLint;
@@ -20,7 +21,12 @@
           return callback(new Error("Error parsing " + (chalk.yellow(_this.filePath)) + ": " + err.message));
         }
 
-        var lintResult = CSSLint.verify(output.css, _this.lintRules);
+        var lintResult;
+        try {
+          lintResult = CSSLint.verify(output.css, _this.lintRules);
+        } catch (_err) {
+          return callback(new Error("Error parsing " + (chalk.yellow(_this.filePath)) + ": " + _err.message));
+        }
 
         var result = {
           file: _this.filePath,
@@ -42,8 +48,13 @@
   LessFile.prototype.getCss = function (callback) {
     if (!this.fileContents) return callback(null, '');
 
-    var parser = new LessParser(this.filePath, this.options);
-    return parser.parse(this.fileContents, callback);
+    if (!_.endsWith(this.filePath, ".css")) {
+      var parser = new LessParser(this.filePath, this.options);
+      return parser.parse(this.fileContents, callback);
+    } else {
+      return callback(null, {"css": this.fileContents});
+    }
+
   };
 
   module.exports.LessFile = LessFile;

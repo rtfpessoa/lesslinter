@@ -167,8 +167,9 @@ function cli(api) {
 
     var lessLinter = new LessLinter(relativeFilePath, input, rules, options);
     var result = lessLinter.lint();
+    result || (result = {});
+    result.messages || (result.messages = []);
 
-    var messages = result.messages || [];
     var output;
 
     var formatter = CSSLint.getFormatter(options.format || "text");
@@ -187,7 +188,7 @@ function cli(api) {
         api.print(output);
       }
 
-      if (messages.length > 0 && pluckByType(messages, "error").length > 0) {
+      if (result.messages.length > 0 && pluckByType(result.messages, "error").length > 0) {
         exitCode = 1;
       }
     }
