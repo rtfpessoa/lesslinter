@@ -1,0 +1,68 @@
+{
+  "name":     "lesslinter",
+  "version":  "0.0.1-5",
+
+  "homepage": "https://www.github.com/rtfpessoa/lesslinter",
+  "description": "lesslinter",
+  "keywords": [
+      "less",
+      "lint",
+      "linter",
+      "tool"
+    ],
+
+  "author": {
+    "name":  "Rodrigo Fernandes",
+    "email": "rtfrodrigo@gmail.com"
+  },
+
+  "repository": {
+    "type": "git",
+    "url": "https://www.github.com/rtfpessoa/lesslinter.git"
+  },
+
+  "bugs": {
+    "url": "https://www.github.com/rtfpessoa/lesslinter/issues"
+  },
+
+  "engines": {
+      "node": ">=0.12.2"
+  },
+
+  "preferGlobal": "true",
+
+  "scripts": {
+    "test": ""
+  },
+
+  "main": "./src/lesslinter.js",
+
+  "bin": {
+    "lesslinter": "./src/cli.js"
+  },
+
+  "dependencies": {
+    "csslint": "0.10.0",
+    "less": "2.5.0",
+    "lodash": "3.7.0",
+    "strip-path": "1.0.0",
+    "chalk": "1.0.0",
+    "source-map": "0.4.2",
+    "pkginfo": "0.3.0"
+  },
+
+  "devDependencies": {},
+
+  "peerDependencies": {},
+
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/rtfpessoa/lesslinter/blob/master/LICENSE"
+    }
+  ],
+
+  "files": [
+    "src"
+  ]
+}

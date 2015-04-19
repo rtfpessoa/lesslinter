@@ -1,0 +1,17 @@
+body {
+  padding: 0px;
+  margin: 0em;
+}
+
+body img {
+  border-width: 0pt;
+  border-width: 0px;
+}
+
+body #id {
+  height: 21%;
+}
+
+body .wrapper {
+  width: 100%;
+}
