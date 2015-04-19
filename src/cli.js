@@ -160,40 +160,53 @@ function cli(api) {
    * @return {Number} exit code
    */
   function processFile(relativeFilePath, options) {
-    var input = api.readFile(relativeFilePath);
-    var rules = gatherRules(options, filterRules(options));
-
     var exitCode = 0;
+    var formatter = CSSLint.getFormatter(options.format || "text");
 
+    var input = api.readFile(relativeFilePath);
+    if (!input) {
+      printError(formatter, relativeFilePath, "Could not read file data. Is the file empty?");
+      return exitCode = 1;
+    }
+
+    var rules = gatherRules(options, filterRules(options));
     var lessLinter = new LessLinter(relativeFilePath, input, rules, options);
-    var result = lessLinter.lint();
+    var lintOutput = lessLinter.lint();
+
+    if (lintOutput.error) {
+      printError(formatter, relativeFilePath, lintOutput.error.message);
+      return exitCode = 2;
+    }
+
+    var result = lintOutput.result;
     result || (result = {});
     result.messages || (result.messages = []);
 
-    var output;
+    options.fullPath = api.getFullPath(relativeFilePath);
 
-    var formatter = CSSLint.getFormatter(options.format || "text");
+    var output = formatter.formatResults(result, relativeFilePath, options);
+    if (output) api.print(output);
 
-    if (!input) {
-      if (formatter.readError) {
-        api.print(formatter.readError(relativeFilePath, "Could not read file data. Is the file empty?"));
-      } else {
-        api.print("lesslinter: Could not read file data in " + relativeFilePath + ". Is the file empty?");
-      }
-      exitCode = 1;
-    } else {
-      options.fullPath = api.getFullPath(relativeFilePath);
-      output = formatter.formatResults(result, relativeFilePath, options);
-      if (output) {
-        api.print(output);
-      }
-
-      if (result.messages.length > 0 && pluckByType(result.messages, "error").length > 0) {
-        exitCode = 1;
-      }
+    if (result.messages.length > 0 && pluckByType(result.messages, "error").length > 0) {
+      exitCode = 3;
     }
 
     return exitCode;
+  }
+
+  /**
+   * Given a formatter, a file path and a message, print formatted output.
+   * @param {Object} formatter object
+   * @param {String} filePath file location
+   * @param {String} message to print
+   * @return {Number} exit code
+   */
+  function printError(formatter, filePath, message) {
+    if (formatter.readError) {
+      api.print(formatter.readError(filePath, message));
+    } else {
+      api.print("lesslinter:" + filePath + ":> " + message);
+    }
   }
 
 
@@ -260,7 +273,6 @@ function cli(api) {
         if (output) {
           api.print(output);
         }
-
 
         files.forEach(function (file) {
           if (exitCode === 0) {
@@ -418,7 +430,7 @@ cli({
           stat = fs.statSync(path);
 
         if (file[0] == ".") return;
-        else if (stat.isFile() && /\.css$/.test(file)) files.push(path);
+        else if (stat.isFile() && /\.(css|less)$/.test(file)) files.push(path);
         else if (stat.isDirectory()) traverse(file, stack);
       });
 

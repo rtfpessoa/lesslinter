@@ -36,6 +36,6 @@ Copyright 2015 Rodrigo Fernandes. Released under the terms of the MIT license.
 
 ### Thanks
 
-I would like to thank the [CSSLint](https://github.com/jgable) for creating such a great tool
-and I would also like to thank [jgable](https://github.com/jgable) for 
-[grunt-lesslint](https://github.com/jgable/grunt-lesslint) which was used as inspiration for this tool.
+I would like to thank the [CSSLint](https://github.com/CSSLint/csslint) team for creating such a great tool
+and also [jgable](https://github.com/jgable) for [grunt-lesslint](https://github.com/jgable/grunt-lesslint)
+which was used as inspiration for this tool.

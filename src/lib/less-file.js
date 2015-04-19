@@ -25,7 +25,7 @@
         try {
           lintResult = CSSLint.verify(output.css, _this.lintRules);
         } catch (_err) {
-          return callback(new Error("Error parsing " + (chalk.yellow(_this.filePath)) + ": " + _err.message));
+          return callback(new Error("Error linting " + (chalk.yellow(_this.filePath)) + ": " + _err.message));
         }
 
         var result = {
