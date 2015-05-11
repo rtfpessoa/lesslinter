@@ -182,10 +182,29 @@ function cli(api) {
     result || (result = {});
     result.messages || (result.messages = []);
 
+    // filter duplicate issues caused by less/sass compilation
+    result.messages = _.uniq(result.messages, function (elem) {
+      return elem.line + elem.message + elem.sourceFile;
+    });
+
     options.fullPath = api.getFullPath(relativeFilePath);
 
-    var output = formatter.formatResults(result, relativeFilePath, options);
-    if (output) api.print(output);
+    // group messages by file path
+    var messageGroups = _.groupBy(result.messages, function (elem) {
+      return elem.sourceFile ? elem.sourceFile : relativeFilePath;
+    });
+
+    // output accomulator
+    var output = "";
+
+    for (var filePath in messageGroups) if (messageGroups.hasOwnProperty(filePath)) {
+      var tmpResult = _.clone(result, true);
+      tmpResult.messages = messageGroups[filePath];
+
+      output += formatter.formatResults(tmpResult, filePath, options);
+    }
+
+    if (output.length) api.print(output);
 
     if (result.messages.length > 0 && pluckByType(result.messages, "error").length > 0) {
       exitCode = 3;
@@ -390,6 +409,7 @@ var appVersion = module.exports.version;
 
 var fs = require("fs");
 var path = require("path");
+var _ = require("lodash");
 
 var CSSLint = require('./lib/csslint-extended').CSSLint;
 var LessLinter = require('./lib/lesslinter');

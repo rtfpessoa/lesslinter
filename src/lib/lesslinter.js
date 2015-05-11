@@ -1,9 +1,7 @@
 (function () {
 
   var _ = require('lodash');
-  var chalk = require('chalk');
   var crypto = require('crypto');
-  var path = require('path');
 
   var SourceMapConsumer = require('source-map').SourceMapConsumer;
 
@@ -29,75 +27,50 @@
 
     var lessFile = new LessFile(_this.fileSrc, _this.fileContents, _this.rules, _this.options);
     lessFile.lint(function (_err, _result) {
-      if (_err != null) return {"error": _err};
-
-      result = _result;
+      if (_err != null) result.error = _err;
+      else result = _result;
     });
 
-    return {"result": processResult(_this.fileSrc, result)};
+    if (result.error) return result;
+
+    return {"result": processResult(result)};
   };
 
-  function processResult(filePath, result) {
+  function processResult(result) {
     result || (result = {});
     var lintResult = result.lint;
 
     if (lintResult && result.sourceMap) {
       var sourceMap = new SourceMapConsumer(result.sourceMap);
-
-      var filteredMessages = filterImportsMessages(filePath, lintResult.messages, sourceMap);
-      injectLessPosition(filteredMessages, sourceMap);
-      adjustMessagePosition(lintResult.messages);
+      lintResult.messages = injectLessPosition(lintResult.messages, sourceMap);
+    } else {
+      lintResult.messages = [];
     }
 
     return lintResult;
   }
 
-  function filterImportsMessages(filePath, messages, sourceMap) {
-    return messages.filter(function (message) {
-      if (message.line === 0 || message.rollup) return true;
-
-      var source = sourceMap.originalPositionFor({
-        line: message.line,
-        column: message.col
-      }).source;
-
-      if (source === null) return false;
-
-      source && (source = path.resolve(source));
-
-      var isThisFile = (source === filePath);
-
-      // TODO: respect requested imports
-      //var stripPath = require('strip-path');
-      //var sourceArray = [stripPath(source, process.cwd()), stripPath(source, process.cwd() + '\\')];
-      //return isThisFile || grunt.file.isMatch(_this.options.imports, sourceArray);
-
-      return isThisFile;
-    });
-  }
-
   function injectLessPosition(messages, sourceMap) {
     messages || (messages = []);
-    messages.forEach(function (message) {
-      if (message.line !== 0 && !message.rollup) {
-        var lessPosition = sourceMap.originalPositionFor({
+    return _.map(messages, function (message) {
+      if (message.line > 0 && !message.rollup) {
+        var originalPosition = sourceMap.originalPositionFor({
           line: message.line,
           column: message.col
         });
 
         message.lessLine = {
-          line: lessPosition.line,
-          column: lessPosition.column
+          line: originalPosition.line,
+          column: originalPosition.column
         };
+
+        message.sourceFile = originalPosition.source;
+      } else {
+        // all the generic messages go in the first line
+        message.line = 0;
+        message.col = 0;
       }
-    });
 
-    return messages;
-  }
-
-  function adjustMessagePosition(messages) {
-    messages || (messages = []);
-    messages.forEach(function (message) {
       if (message.lessLine) {
         message.line = message.lessLine.line - 1;
         message.col = message.lessLine.column - 1;
@@ -105,9 +78,9 @@
 
       message.line += 1;
       message.col += 2;
-    });
 
-    return messages;
+      return message;
+    });
   }
 
   module.exports = LessLinter;

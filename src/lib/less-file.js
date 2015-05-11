@@ -48,11 +48,13 @@
   LessFile.prototype.getCss = function (callback) {
     if (!this.fileContents) return callback(null, '');
 
-    if (!_.endsWith(this.filePath, ".css")) {
+    if (_.endsWith(this.filePath, ".less")) {
       var parser = new LessParser(this.filePath, this.options);
       return parser.parse(this.fileContents, callback);
-    } else {
+    } else if (_.endsWith(this.filePath, ".css")) {
       return callback(null, {"css": this.fileContents});
+    } else {
+      return callback("extension not supported");
     }
 
   };
